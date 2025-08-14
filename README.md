@@ -1,46 +1,137 @@
-# Getting Started with Create React App
+# Suno Note Taker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React TypeScript application for comparing and rating Suno AI-generated songs. Built with modern React patterns and proper separation of concerns.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Song Management**: Add Suno songs via iframe embeds, URLs, or raw IDs
+- **Note Taking**: Rate songs with scores from -2 to +2 and add descriptive notes
+- **Scoring System**: Automatic calculation of total scores and averages
+- **Manual Sorting**: Sort songs by total score or average score with a manual sort button
+- **Local Storage**: All data is saved locally in your browser
+- **Import/Export**: Backup and restore your song collection via JSON
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **Local Storage** for data persistence
+- **Modern React Patterns** (hooks, functional components)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+src/
+├── components/          # Reusable UI components
+│   ├── AddSongModal.tsx    # Modal for adding new songs
+│   ├── EmptyState.tsx      # Empty state when no songs exist
+│   ├── Footer.tsx          # App footer
+│   ├── Header.tsx          # App header with navigation
+│   ├── PMCount.tsx         # Plus/minus count display
+│   ├── ScorePill.tsx       # Score display component
+│   ├── SectionHeader.tsx   # Section headers with controls
+│   ├── SongCard.tsx        # Individual song display
+│   └── index.ts            # Component exports
+├── types/              # TypeScript type definitions
+│   └── index.ts           # App interfaces and types
+├── utils/              # Utility functions
+│   └── index.ts           # Helper functions and constants
+├── App.tsx             # Main application component
+└── index.tsx           # Application entry point
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Getting Started
 
-### `npm run build`
+### Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Node.js 16+ 
+- npm or yarn
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Installation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd suno-note-taker
+```
 
-### `npm run eject`
+2. Install dependencies:
+```bash
+npm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+3. Start the development server:
+```bash
+npm start
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Building for Production
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```bash
+npm run build
+```
 
-## Learn More
+## Usage
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Adding Songs
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Click the "Add song link" button
+2. Paste a Suno iframe embed, URL, or raw song ID
+3. The app will automatically parse and add the song
+
+### Taking Notes
+
+1. For each song, use the score selector (-2 to +2)
+2. Write a descriptive note about your impression
+3. Click "Add note" or press Enter
+
+### Managing Songs
+
+- **Remove songs**: Click the "Remove" button on any song card
+- **Delete notes**: Click "Delete" on individual notes
+- **Sort songs**: Click the "Sort" button to order by total or average score (songs stay in place while adding notes)
+
+### Data Management
+
+- **Export**: Click "Export" to download your song collection as JSON
+- **Import**: Click "Import" to restore from a previously exported file
+
+## Supported Input Formats
+
+The app accepts various Suno input formats:
+
+- **Iframe embeds**: `<iframe src="https://suno.com/embed/...">`
+- **Embed URLs**: `https://suno.com/embed/[song-id]`
+- **Song URLs**: `https://suno.com/song/[song-id]`
+- **Raw IDs**: `[36-character-song-id]`
+
+## Development
+
+### Code Style
+
+- TypeScript for type safety
+- Functional components with hooks
+- Proper separation of concerns
+- Consistent naming conventions
+- Optimized rendering with useCallback and useMemo to prevent unnecessary re-renders
+
+### Testing
+
+The app includes inline tests for core utility functions. Run the app and check the browser console for test results.
+
+### Adding New Features
+
+1. Define types in `src/types/index.ts`
+2. Add utility functions in `src/utils/index.ts`
+3. Create components in `src/components/`
+4. Update the main App component as needed
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

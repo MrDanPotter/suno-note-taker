@@ -37,7 +37,7 @@ export const AddSongModal: React.FC<AddSongModalProps> = ({
         
         <textarea 
           className="w-full border rounded-xl p-3 text-sm h-28" 
-          placeholder={`Example iframe or URL...\n<iframe src="https://suno.com/embed/96bdf0e9-bac4-414c-bc32-40fb90fcb15a"></iframe>\nhttps://suno.com/song/96bdf0e9-bac4-414c-bc32-40fb90fcb15a`} 
+          placeholder={`Example iframe or URL...\n<iframe src="..."></iframe>\n...`} 
           value={paste} 
           onChange={(e) => setPaste(e.target.value)} 
         />

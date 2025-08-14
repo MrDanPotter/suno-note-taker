@@ -51,11 +51,11 @@ export function calcSongScore(song: Song): SongScore {
 // Inline tests for parseSunoInput and calcSongScore
 export function runInlineTests(): void {
   // parse tests
-  const exIframe = '<iframe src="https://suno.com/embed/96bdf0e9-bac4-414c-bc32-40fb90fcb15a" width="760" height="240"></iframe>';
-  const exEmbed = 'https://suno.com/embed/96bdf0e9-bac4-414c-bc32-40fb90fcb15a';
-  const exSong = 'https://suno.com/song/96bdf0e9-bac4-414c-bc32-40fb90fcb15a';
-  const exRaw = '96bdf0e9-bac4-414c-bc32-40fb90fcb15a';
-  const exBad = 'https://example.com/whatever';
+  const exIframe = '<iframe src="..." width="760" height="240"></iframe>';
+  const exEmbed = '...';
+  const exSong = '...';
+  const exRaw = '...';
+  const exBad = '...';
   
   try {
     const t1 = parseSunoInput(exIframe);
@@ -64,10 +64,10 @@ export function runInlineTests(): void {
     const t4 = parseSunoInput(exRaw);
     const t5 = parseSunoInput(exBad);
     
-    console.assert(t1 && t1.id === '96bdf0e9-bac4-414c-bc32-40fb90fcb15a', 'iframe parse failed');
-    console.assert(t2 && t2.id === '96bdf0e9-bac4-414c-bc32-40fb90fcb15a', 'embed URL parse failed');
-    console.assert(t3 && t3.id === '96bdf0e9-bac4-414c-bc32-40fb90fcb15a', 'song URL parse failed');
-    console.assert(t4 && t4.id === '96bdf0e9-bac4-414c-bc32-40fb90fcb15a', 'raw id parse failed');
+    console.assert(t1 && t1.id === '...', 'iframe parse failed');
+    console.assert(t2 && t2.id === '...', 'embed URL parse failed');
+    console.assert(t3 && t3.id === '...', 'song URL parse failed');
+    console.assert(t4 && t4.id === '...', 'raw id parse failed');
     console.assert(t5 === null, 'bad URL should be null');
   } catch (e) {
     console.warn('Parse tests threw (non-fatal):', e);

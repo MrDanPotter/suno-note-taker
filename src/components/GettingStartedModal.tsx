@@ -34,7 +34,7 @@ export const GettingStartedModal: React.FC<GettingStartedModalProps> = ({
             </div>
             <div>
               <p className="font-medium">Open Suno</p>
-              <p className="text-sm text-gray-600">Go to <a href="https://suno.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">suno.com</a> and navigate to the song you want to import</p>
+              <p className="text-sm text-gray-600">Go to ... and navigate to the song you want to import</p>
             </div>
           </div>
 

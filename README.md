@@ -101,12 +101,12 @@ npm run build
 
 ## Supported Input Formats
 
-The app accepts Suno iframe embed codes:
+The app accepts various Suno input formats:
 
-- **Iframe embeds**: `<iframe src="https://suno.com/embed/...">` (recommended)
-- **Raw song IDs**: `[36-character-song-id]` (fallback option)
-
-**Note**: For the best experience, use the full iframe code from Suno's share menu (Share → Share to... → Embed → Copy).
+- **Iframe embeds**: `<iframe src="https://suno.com/embed/...">`
+- **Embed URLs**: `https://suno.com/embed/[song-id]`
+- **Song URLs**: `https://suno.com/song/[song-id]`
+- **Raw IDs**: `[36-character-song-id]`
 
 ## Development
 

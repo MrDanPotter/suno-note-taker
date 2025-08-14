@@ -9,7 +9,7 @@ A React TypeScript application for comparing and rating Suno AI-generated songs.
 - **Scoring System**: Automatic calculation of total scores and averages
 - **Manual Sorting**: Sort songs by total score or average score with a manual sort button
 - **Local Storage**: All data is saved locally in your browser
-- **Import/Export**: Backup and restore your song collection via JSON
+- **Getting Started Guide**: Step-by-step instructions for adding your first song
 
 ## Tech Stack
 
@@ -93,19 +93,20 @@ npm run build
 - **Delete notes**: Click "Delete" on individual notes
 - **Sort songs**: Click the "Sort" button to order by total or average score (songs stay in place while adding notes)
 
-### Data Management
+### Getting Started
 
-- **Export**: Click "Export" to download your song collection as JSON
-- **Import**: Click "Import" to restore from a previously exported file
+- **Instructions**: Click "Getting Started" for step-by-step guidance on adding songs
+- **Step-by-step process**: Clear instructions for copying Suno embed codes
+- **Pro tips**: Additional guidance for different input formats
 
 ## Supported Input Formats
 
-The app accepts various Suno input formats:
+The app accepts Suno iframe embed codes:
 
-- **Iframe embeds**: `<iframe src="https://suno.com/embed/...">`
-- **Embed URLs**: `https://suno.com/embed/[song-id]`
-- **Song URLs**: `https://suno.com/song/[song-id]`
-- **Raw IDs**: `[36-character-song-id]`
+- **Iframe embeds**: `<iframe src="https://suno.com/embed/...">` (recommended)
+- **Raw song IDs**: `[36-character-song-id]` (fallback option)
+
+**Note**: For the best experience, use the full iframe code from Suno's share menu (Share → Share to... → Embed → Copy).
 
 ## Development
 

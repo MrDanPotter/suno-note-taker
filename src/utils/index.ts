@@ -22,18 +22,15 @@ export function parseSunoInput(input: string): ParsedSunoInput | null {
   const trimmed = (input || "").trim();
   if (!trimmed) return null;
   
+  // First, try to extract src from iframe
   const iframeSrcMatch = trimmed.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i);
   const candidate = iframeSrcMatch ? iframeSrcMatch[1] : trimmed;
   
-  const urlIdMatch = candidate.match(/suno\.com\/(?:embed|song)\/([a-f0-9-]{36})/i);
-  if (urlIdMatch) {
-    const id = urlIdMatch[1];
-    return { id, embedSrc: `https://suno.com/embed/${id}` };
-  }
-  
-  const rawIdMatch = candidate.match(/^[a-f0-9-]{36}$/i);
-  if (rawIdMatch) {
-    const id = rawIdMatch[0];
+  // Try to extract ID from various Suno URL patterns
+  // Look for 36-character hex IDs in the URL
+  const idMatch = candidate.match(/([a-f0-9-]{36})/i);
+  if (idMatch) {
+    const id = idMatch[1];
     return { id, embedSrc: `https://suno.com/embed/${id}` };
   }
   

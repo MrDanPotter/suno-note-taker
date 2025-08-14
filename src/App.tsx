@@ -6,6 +6,7 @@ import { EmptyState } from './components/EmptyState';
 import { SectionHeader } from './components/SectionHeader';
 import { SongCard } from './components/SongCard';
 import { AddSongModal } from './components/AddSongModal';
+import { GettingStartedModal } from './components/GettingStartedModal';
 import { 
   LS_KEY, 
   parseSunoInput, 
@@ -17,6 +18,7 @@ import {
 function App() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [showGettingStarted, setShowGettingStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     try { 
@@ -88,7 +90,7 @@ function App() {
     const parsed = parseSunoInput(input.paste);
     
     if (!parsed) { 
-      setError("Couldn't recognize that as a Suno embed or link. Paste the full iframe or a URL containing /embed/ or /song/."); 
+      setError("Couldn't recognize that as a Suno embed. Please copy the full iframe code from Suno's share menu (Share → Share to... → Embed → Copy)."); 
       return; 
     }
     
@@ -128,34 +130,11 @@ function App() {
     setSongs(prev => prev.filter(s => s.id !== songId)); 
   }
 
-  function handleImport() { 
-    const text = prompt("Paste previously exported JSON:"); 
-    if (!text) return; 
-    try { 
-      const parsed = JSON.parse(text); 
-      if (!Array.isArray(parsed)) throw new Error(); 
-      setSongs(parsed); 
-    } catch { 
-      alert("Invalid JSON"); 
-    } 
-  }
-
-  function handleExport() { 
-    const blob = new Blob([JSON.stringify(songs, null, 2)], { type: "application/json" }); 
-    const url = URL.createObjectURL(blob); 
-    const a = document.createElement("a"); 
-    a.href = url; 
-    a.download = "suno-comparison.json"; 
-    a.click(); 
-    URL.revokeObjectURL(url); 
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900">
       <Header 
         onShowAdd={() => setShowAdd(true)} 
-        onImport={handleImport} 
-        onExport={handleExport} 
+        onShowGettingStarted={() => setShowGettingStarted(true)} 
       />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
@@ -206,6 +185,11 @@ function App() {
         onClose={() => setShowAdd(false)} 
         onAddSong={addSongFromInput} 
         error={error} 
+      />
+
+      <GettingStartedModal 
+        isOpen={showGettingStarted} 
+        onClose={() => setShowGettingStarted(false)} 
       />
 
       <Footer />

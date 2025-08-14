@@ -2,11 +2,10 @@ import React from 'react';
 
 interface HeaderProps {
   onShowAdd: () => void;
-  onImport: () => void;
-  onExport: () => void;
+  onShowGettingStarted: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onShowAdd, onImport, onExport }) => {
+export const Header: React.FC<HeaderProps> = ({ onShowAdd, onShowGettingStarted }) => {
   return (
     <header className="sticky top-0 z-10 backdrop-blur bg-white/80 border-b">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -22,15 +21,9 @@ export const Header: React.FC<HeaderProps> = ({ onShowAdd, onImport, onExport })
         <div className="flex items-center gap-2">
           <button 
             className="text-sm px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" 
-            onClick={onImport}
+            onClick={onShowGettingStarted}
           >
-            Import
-          </button>
-          <button 
-            className="text-sm px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" 
-            onClick={onExport}
-          >
-            Export
+            Getting Started
           </button>
           <button 
             className="text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700" 

@@ -25,7 +25,7 @@ export function uuid(): string {
 }
 
 export function clampScore(n: number): number {
-  return Math.max(0, Math.min(5, Math.round(n)));
+  return Math.max(0, Math.min(5, Math.round(n * 10) / 10));
 }
 
 // Accepts: full <iframe ...>, an embed URL, a song URL, or a raw 36-char id

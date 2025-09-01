@@ -92,18 +92,20 @@ The new system uses a structured approach with specific categories:
    - Vocals, Timing, Overall Vibe
 
 2. **Rating Process**:
-   - Click any category button to open a rating modal
-   - Use the slider to select a score from 0-5
-   - Click "Add Rating" to save
+   - Click any category button to add it to the song card
+   - Use the inline slider to adjust the score from 0-5 with 0.1 precision
+   - Scores update in real-time as you move the slider
+   - Delete ratings using the × button on each rating component
 
 3. **Multiple Verses/Bridges**:
    - Verse and Bridge buttons remain active after rating
-   - Click again to rate the next verse/bridge (Verse 2, Bridge 2, etc.)
+   - Click again to add the next verse/bridge (Verse 2, Bridge 2, etc.)
+   - Each verse/bridge gets its own rating slider
 
-4. **Category Completion**:
-   - Once rated, category buttons show green with the score
-   - Other categories remain available until rated
-   - Delete ratings using the × button in the category scores section
+4. **Inline Interface**:
+   - All rating sliders are visible directly on the song card
+   - No modal popups - everything is accessible at a glance
+   - Decimal precision (0.1) for fine-tuned scoring
 
 ### Scoring System
 

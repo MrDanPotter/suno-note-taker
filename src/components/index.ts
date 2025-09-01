@@ -5,4 +5,4 @@ export { SectionHeader } from './SectionHeader';
 export { SongCard } from './SongCard';
 export { AddSongModal } from './AddSongModal';
 export { GettingStartedModal } from './GettingStartedModal';
-export { CategoryRatingModal } from './CategoryRatingModal';
+export { CategoryRating } from './CategoryRating';

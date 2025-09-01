@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Song, CategoryNote, NoteCategory } from '../types';
 import { ScorePill } from './ScorePill';
-import { CategoryRatingModal } from './CategoryRatingModal';
+import { CategoryRating } from './CategoryRating';
 import { calcSongScore, NOTE_CATEGORIES, CATEGORY_LABELS, getNextVerseNumber, getNextBridgeNumber } from '../utils';
 
 interface SongCardProps {
@@ -17,22 +17,9 @@ export const SongCard: React.FC<SongCardProps> = ({
   onDeleteCategoryNote, 
   onRemoveSong 
 }) => {
-  const { total, average, count, categoryScores, completedCategories } = useMemo(() => calcSongScore(song), [song]);
-  const [ratingModal, setRatingModal] = useState<{
-    isOpen: boolean;
-    category: NoteCategory;
-    verseNumber?: number;
-    bridgeNumber?: number;
-  }>({
-    isOpen: false,
-    category: 'intro'
-  });
+  const { total, average, count, completedCategories } = useMemo(() => calcSongScore(song), [song]);
 
   // Memoize handlers to prevent unnecessary re-renders
-  const handleAddCategoryNote = useCallback((note: Omit<CategoryNote, 'id' | 'createdAt'>) => {
-    onAddCategoryNote(song.id, note);
-  }, [song.id, onAddCategoryNote]);
-
   const handleRemoveSong = useCallback(() => {
     onRemoveSong(song.id);
   }, [song.id, onRemoveSong]);
@@ -51,17 +38,39 @@ export const SongCard: React.FC<SongCardProps> = ({
       bridgeNumber = getNextBridgeNumber(song);
     }
 
-    setRatingModal({
-      isOpen: true,
+    // Add a new note with default score 0
+    const note: Omit<CategoryNote, 'id' | 'createdAt'> = {
       category,
-      verseNumber,
-      bridgeNumber
-    });
-  }, [song]);
+      score: 0,
+      ...(verseNumber && { verseNumber }),
+      ...(bridgeNumber && { bridgeNumber })
+    };
+    
+    onAddCategoryNote(song.id, note);
+  }, [song, onAddCategoryNote]);
 
-  const closeRatingModal = useCallback(() => {
-    setRatingModal(prev => ({ ...prev, isOpen: false }));
-  }, []);
+  const handleScoreChange = useCallback((category: NoteCategory, newScore: number, verseNumber?: number, bridgeNumber?: number) => {
+    // Find existing note for this category
+    const existingNote = song.categoryNotes.find(note => {
+      if (note.category !== category) return false;
+      if (category === 'verse' && verseNumber) {
+        return note.verseNumber === verseNumber;
+      }
+      if (category === 'bridge' && bridgeNumber) {
+        return note.bridgeNumber === bridgeNumber;
+      }
+      return true;
+    });
+
+    if (existingNote) {
+      // Update existing note
+      const updatedNote: Omit<CategoryNote, 'id' | 'createdAt'> = {
+        ...existingNote,
+        score: newScore
+      };
+      onAddCategoryNote(song.id, updatedNote);
+    }
+  }, [song.categoryNotes, onAddCategoryNote, song.id]);
 
   // Memoize the iframe to prevent re-rendering
   const songIframe = useMemo(() => (
@@ -87,27 +96,6 @@ export const SongCard: React.FC<SongCardProps> = ({
 
     return grouped;
   }, [song.categoryNotes]);
-
-  const isCategoryCompleted = (category: NoteCategory): boolean => {
-    return completedCategories.includes(category);
-  };
-
-  const getCategoryButtonLabel = (category: NoteCategory): string => {
-    const baseLabel = CATEGORY_LABELS[category];
-    const notes = notesByCategory.get(category) || [];
-    
-    if (category === 'verse' || category === 'bridge') {
-      const numbers = notes.map(note => 
-        category === 'verse' ? note.verseNumber || 1 : note.bridgeNumber || 1
-      );
-      const uniqueNumbers = Array.from(new Set(numbers)).sort((a, b) => a - b);
-      if (uniqueNumbers.length > 0) {
-        return `${baseLabel} ${uniqueNumbers.join(', ')}`;
-      }
-    }
-    
-    return baseLabel;
-  };
 
   return (
     <div className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
@@ -135,71 +123,98 @@ export const SongCard: React.FC<SongCardProps> = ({
         {songIframe}
       </div>
 
-      {/* Category buttons */}
+      {/* Category ratings */}
       <div className="px-4 py-3">
+        {/* Category buttons area */}
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Rate Categories</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Add Categories</h3>
           <div className="grid grid-cols-2 gap-2">
             {NOTE_CATEGORIES.map(category => {
-              const isCompleted = isCategoryCompleted(category);
               const notes = notesByCategory.get(category) || [];
-              const latestNote = notes.sort((a, b) => b.createdAt - a.createdAt)[0];
+              const isCompleted = notes.length > 0;
               
-              return (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
-                  disabled={isCompleted && category !== 'verse' && category !== 'bridge'}
-                  className={`
-                    text-xs px-3 py-2 rounded-lg border transition-colors
-                    ${isCompleted 
-                      ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' 
-                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }
-                    ${(category === 'verse' || category === 'bridge') ? '' : 'disabled:opacity-50 disabled:cursor-not-allowed'}
-                  `}
-                  title={isCompleted ? `Rated: ${latestNote?.score}/5` : `Rate ${CATEGORY_LABELS[category]}`}
-                >
-                  <div className="font-medium">{getCategoryButtonLabel(category)}</div>
-                  {isCompleted && (
-                    <div className="text-xs opacity-75">{latestNote?.score}/5</div>
-                  )}
-                </button>
-              );
+              // For verse and bridge, show button if no notes exist
+              if (category === 'verse' || category === 'bridge') {
+                return (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryClick(category)}
+                    className="text-xs px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                    title={`Add ${CATEGORY_LABELS[category]} rating`}
+                  >
+                    + {CATEGORY_LABELS[category]}
+                  </button>
+                );
+              }
+              
+              // For other categories, only show button if not completed
+              if (!isCompleted) {
+                return (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryClick(category)}
+                    className="text-xs px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                    title={`Add ${CATEGORY_LABELS[category]} rating`}
+                  >
+                    + {CATEGORY_LABELS[category]}
+                  </button>
+                );
+              }
+              
+              return null; // Don't show button for completed non-verse/bridge categories
             })}
           </div>
         </div>
 
-        {/* Category scores display */}
-        {completedCategories.length > 0 && (
+        {/* Ratings area */}
+        {song.categoryNotes.length > 0 && (
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Category Scores</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {completedCategories.map(category => {
-                const score = categoryScores[category];
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Category Ratings</h3>
+            <div className="space-y-2">
+              {NOTE_CATEGORIES.map(category => {
                 const notes = notesByCategory.get(category) || [];
                 
+                if (notes.length === 0) {
+                  return null; // Don't render anything for unrated categories
+                }
+
+                // For verse and bridge, show multiple ratings if they exist
+                if (category === 'verse' || category === 'bridge') {
+                  const groupedNotes = new Map<number, CategoryNote[]>();
+                  notes.forEach(note => {
+                    const number = category === 'verse' ? note.verseNumber || 1 : note.bridgeNumber || 1;
+                    if (!groupedNotes.has(number)) {
+                      groupedNotes.set(number, []);
+                    }
+                    groupedNotes.get(number)!.push(note);
+                  });
+
+                  return Array.from(groupedNotes.entries()).map(([number, categoryNotes]) => {
+                    const note = categoryNotes[0]; // Take the first note for this number
+                    return (
+                      <CategoryRating
+                        key={`${category}-${number}`}
+                        category={category}
+                        currentScore={note.score}
+                        onScoreChange={(newScore: number) => handleScoreChange(category, newScore, number, undefined)}
+                        onDelete={() => handleDeleteCategoryNote(note.id)}
+                        verseNumber={category === 'verse' ? number : undefined}
+                        bridgeNumber={category === 'bridge' ? number : undefined}
+                      />
+                    );
+                  });
+                }
+
+                // For other categories, show single rating
+                const note = notes[0];
                 return (
-                  <div key={category} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                    <span className="text-xs font-medium text-gray-700">
-                      {CATEGORY_LABELS[category]}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-900">{score.toFixed(1)}/5</span>
-                      <button
-                        onClick={() => {
-                          const latestNote = notes.sort((a, b) => b.createdAt - a.createdAt)[0];
-                          if (latestNote) {
-                            handleDeleteCategoryNote(latestNote.id);
-                          }
-                        }}
-                        className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200"
-                        title="Delete rating"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
+                  <CategoryRating
+                    key={category}
+                    category={category}
+                    currentScore={note.score}
+                    onScoreChange={(newScore: number) => handleScoreChange(category, newScore)}
+                    onDelete={() => handleDeleteCategoryNote(note.id)}
+                  />
                 );
               })}
             </div>
@@ -210,7 +225,7 @@ export const SongCard: React.FC<SongCardProps> = ({
         {completedCategories.length > 0 && (
           <div className="text-center p-3 bg-blue-50 rounded-lg">
             <div className="text-sm font-medium text-blue-900">
-              Overall Score: {average.toFixed(1)}/5
+              Overall Score: {average.toFixed(2)}/5
             </div>
             <div className="text-xs text-blue-700">
               Based on {count} categories
@@ -218,15 +233,6 @@ export const SongCard: React.FC<SongCardProps> = ({
           </div>
         )}
       </div>
-
-      <CategoryRatingModal
-        isOpen={ratingModal.isOpen}
-        onClose={closeRatingModal}
-        onAddNote={handleAddCategoryNote}
-        category={ratingModal.category}
-        verseNumber={ratingModal.verseNumber}
-        bridgeNumber={ratingModal.bridgeNumber}
-      />
     </div>
   );
 };

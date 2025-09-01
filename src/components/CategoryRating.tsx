@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NoteCategory, CategoryNote } from '../types';
+import { NoteCategory } from '../types';
 import { CATEGORY_LABELS } from '../utils';
 
 interface CategoryRatingProps {
@@ -43,16 +43,19 @@ export const CategoryRating: React.FC<CategoryRatingProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+      {/* Score display */}
+      <div className="text-sm font-semibold text-gray-900 min-w-[3rem] text-center">
+        {score.toFixed(1)}
+      </div>
+      
+      {/* Category label */}
+      <div className="text-sm font-medium text-gray-700 min-w-[5rem]">
+        {getCategoryLabel()}
+      </div>
+      
+      {/* Slider */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 truncate">
-            {getCategoryLabel()}
-          </span>
-          <span className="text-sm font-semibold text-gray-900">
-            {score.toFixed(1)}/5
-          </span>
-        </div>
         <input
           type="range"
           min="0"
@@ -71,6 +74,8 @@ export const CategoryRating: React.FC<CategoryRatingProps> = ({
           <span>5</span>
         </div>
       </div>
+      
+      {/* Delete button */}
       <button
         onClick={onDelete}
         className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 flex-shrink-0"

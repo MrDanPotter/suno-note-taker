@@ -7,6 +7,7 @@ import { calcSongScore, NOTE_CATEGORIES, CATEGORY_LABELS, getNextVerseNumber, ge
 interface SongCardProps {
   song: Song;
   onAddCategoryNote: (songId: string, note: Omit<CategoryNote, 'id' | 'createdAt'>) => void;
+  onUpdateCategoryNote: (songId: string, noteId: string, updatedNote: Omit<CategoryNote, 'id' | 'createdAt'>) => void;
   onDeleteCategoryNote: (songId: string, noteId: string) => void;
   onRemoveSong: (songId: string) => void;
 }
@@ -14,6 +15,7 @@ interface SongCardProps {
 export const SongCard: React.FC<SongCardProps> = ({ 
   song, 
   onAddCategoryNote, 
+  onUpdateCategoryNote, 
   onDeleteCategoryNote, 
   onRemoveSong 
 }) => {
@@ -68,9 +70,9 @@ export const SongCard: React.FC<SongCardProps> = ({
         ...existingNote,
         score: newScore
       };
-      onAddCategoryNote(song.id, updatedNote);
+      onUpdateCategoryNote(song.id, existingNote.id, updatedNote);
     }
-  }, [song.categoryNotes, onAddCategoryNote, song.id]);
+  }, [song.categoryNotes, onUpdateCategoryNote, song.id]);
 
   // Memoize the iframe to prevent re-rendering
   const songIframe = useMemo(() => (

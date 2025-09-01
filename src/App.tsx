@@ -124,6 +124,21 @@ function App() {
     )); 
   }
 
+  function handleUpdateCategoryNote(songId: string, noteId: string, updatedNote: Omit<CategoryNote, 'id' | 'createdAt'>) {
+    setSongs(prev => prev.map(s => 
+      s.id === songId 
+        ? { 
+            ...s, 
+            categoryNotes: s.categoryNotes.map(n => 
+              n.id === noteId 
+                ? { ...n, ...updatedNote, createdAt: Date.now() }
+                : n
+            )
+          }
+        : s
+    ));
+  }
+
   function handleDeleteCategoryNote(songId: string, noteId: string) { 
     setSongs(prev => prev.map(s => 
       s.id === songId 
@@ -177,6 +192,7 @@ function App() {
                   key={s.id} 
                   song={s} 
                   onAddCategoryNote={handleAddCategoryNote} 
+                  onUpdateCategoryNote={handleUpdateCategoryNote}
                   onDeleteCategoryNote={handleDeleteCategoryNote} 
                   onRemoveSong={handleRemoveSong} 
                 />

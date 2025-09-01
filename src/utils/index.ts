@@ -183,4 +183,28 @@ export function runInlineTests(): void {
   
   console.assert(r1.total === 12 && r1.average === 4, 'calcSongScore totals/avg failed');
   console.assert(r2.total === 0 && r2.average === 0, 'calcSongScore empty failed');
+
+  // Test single category scoring
+  const s3: Song = {
+    id: 'test3',
+    embedSrc: '',
+    originalInput: '',
+    categoryNotes: [
+      { id: '1', category: 'intro', score: 4.5, createdAt: 0 }
+    ]
+  };
+  const r3 = calcSongScore(s3);
+  console.assert(r3.average === 4.5, 'Single category scoring failed - expected 4.5, got ' + r3.average);
+
+  // Test verse scoring
+  const s4: Song = {
+    id: 'test4',
+    embedSrc: '',
+    originalInput: '',
+    categoryNotes: [
+      { id: '1', category: 'verse', score: 3.0, verseNumber: 1, createdAt: 0 }
+    ]
+  };
+  const r4 = calcSongScore(s4);
+  console.assert(r4.average === 3.0, 'Single verse scoring failed - expected 3.0, got ' + r4.average);
 }

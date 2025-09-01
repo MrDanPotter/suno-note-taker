@@ -30,11 +30,3 @@ export interface ParsedSunoInput {
 }
 
 export type SortMode = 'total' | 'average';
-
-// Legacy support - keeping old Note interface for migration
-export interface Note {
-  id: string;
-  text: string;
-  score: -2 | -1 | 0 | 1 | 2;
-  createdAt: number;
-}

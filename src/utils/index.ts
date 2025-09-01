@@ -1,6 +1,6 @@
 import { Song, SongScore, ParsedSunoInput, NoteCategory } from '../types';
 
-export const LS_KEY = "suno-comparator-v4"; // Updated version for new system
+export const LS_KEY = "suno-comparator-v4"; // Current version
 
 export const NOTE_CATEGORIES: NoteCategory[] = [
   'intro', 'verse', 'bridge', 'chorus', 'outro', 'vocals', 'timing', 'overall_vibe'
@@ -122,27 +122,6 @@ export function getNextBridgeNumber(song: Song): number {
   
   const maxBridgeNumber = Math.max(...bridgeNotes.map(note => note.bridgeNumber || 1));
   return maxBridgeNumber + 1;
-}
-
-// Migration function to convert old notes to new system
-export function migrateOldNotes(song: any): Song {
-  if (song.notes && Array.isArray(song.notes)) {
-    // Convert old notes to new system
-    const categoryNotes = song.notes.map((note: any) => ({
-      id: note.id,
-      category: 'overall_vibe' as NoteCategory, // Default to overall vibe
-      score: Math.max(0, note.score + 2), // Convert -2 to +2 scale to 0-5 scale
-      createdAt: note.createdAt
-    }));
-    
-    return {
-      ...song,
-      categoryNotes,
-      notes: undefined // Remove old notes
-    };
-  }
-  
-  return song;
 }
 
 // Inline tests for parseSunoInput and calcSongScore

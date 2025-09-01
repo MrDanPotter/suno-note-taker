@@ -12,8 +12,7 @@ import {
   parseSunoInput, 
   calcSongScore, 
   uuid, 
-  runInlineTests,
-  migrateOldNotes
+  runInlineTests
 } from './utils';
 
 function App() {
@@ -29,6 +28,7 @@ function App() {
     return "total"; // or "average"
   });
   const [isSorted, setIsSorted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Run inline tests on mount
   useEffect(() => {
@@ -41,19 +41,28 @@ function App() {
       const saved = localStorage.getItem(LS_KEY); 
       if (saved) {
         const parsedSongs = JSON.parse(saved);
-        // Migrate old songs to new format
-        const migratedSongs = parsedSongs.map((song: any) => migrateOldNotes(song));
-        setSongs(migratedSongs);
+        setSongs(parsedSongs);
+      } else {
       }
-    } catch {} 
+      setIsInitialized(true); // Mark as initialized after loading attempt
+    } catch (error) {
+      setIsInitialized(true); // Mark as initialized even if there's an error
+    } 
   }, []);
 
   // Save songs to localStorage
   useEffect(() => { 
+    // Only save after initial load is complete
+    if (!isInitialized) {
+      return;
+    }
+    
     try { 
-      localStorage.setItem(LS_KEY, JSON.stringify(songs)); 
-    } catch {} 
-  }, [songs]);
+      const songsJson = JSON.stringify(songs);
+      localStorage.setItem(LS_KEY, songsJson); 
+    } catch (error) {
+    } 
+  }, [songs, isInitialized]);
 
   // Save sort mode to localStorage
   useEffect(() => { 

@@ -1,4 +1,4 @@
-import { Song, SongScore, ParsedSunoInput, NoteCategory, CategoryNote } from '../types';
+import { Song, SongScore, ParsedSunoInput, NoteCategory } from '../types';
 
 export const LS_KEY = "suno-comparator-v4"; // Updated version for new system
 
@@ -72,24 +72,9 @@ export function calcSongScore(song: Song): SongScore {
     if (notesForCategory.length > 0) {
       // For verse and bridge, we need to handle multiple instances
       if (category === 'verse' || category === 'bridge') {
-        // Group by verse/bridge number and calculate average
-        const groupedNotes = new Map<number, CategoryNote[]>();
-        notesForCategory.forEach(note => {
-          const number = category === 'verse' ? note.verseNumber || 1 : note.bridgeNumber || 1;
-          if (!groupedNotes.has(number)) {
-            groupedNotes.set(number, []);
-          }
-          groupedNotes.get(number)!.push(note);
-        });
-        
-        // Calculate average score across all verses/bridges
-        let totalScore = 0;
-        let totalCount = 0;
-        groupedNotes.forEach(notes => {
-          const avgScore = notes.reduce((sum, note) => sum + note.score, 0) / notes.length;
-          totalScore += avgScore;
-          totalCount++;
-        });
+        // Calculate average of all individual scores across all verses/bridges
+        const totalScore = notesForCategory.reduce((sum, note) => sum + note.score, 0);
+        const totalCount = notesForCategory.length;
         
         categoryScores[category] = totalCount > 0 ? totalScore / totalCount : 0;
         completedCategories.push(category);

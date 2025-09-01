@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { Song, CategoryNote, NoteCategory } from '../types';
-import { ScorePill } from './ScorePill';
+
 import { CategoryRating } from './CategoryRating';
 import { calcSongScore, NOTE_CATEGORIES, CATEGORY_LABELS, getNextVerseNumber, getNextBridgeNumber } from '../utils';
 
@@ -17,7 +17,7 @@ export const SongCard: React.FC<SongCardProps> = ({
   onDeleteCategoryNote, 
   onRemoveSong 
 }) => {
-  const { total, average, count, completedCategories } = useMemo(() => calcSongScore(song), [song]);
+  const { average, count } = useMemo(() => calcSongScore(song), [song]);
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleRemoveSong = useCallback(() => {
@@ -103,7 +103,9 @@ export const SongCard: React.FC<SongCardProps> = ({
         <div className="flex flex-col gap-1">
           <div className="text-sm text-gray-500 break-all">{song.id}</div>
           <div className="flex items-center gap-2">
-            <ScorePill total={total} average={average} />
+            <div className="text-sm font-medium text-blue-900">
+              Overall Score: {average.toFixed(2)}/5
+            </div>
             <div className="text-xs text-gray-500">
               {count} categories rated
             </div>
@@ -217,18 +219,6 @@ export const SongCard: React.FC<SongCardProps> = ({
                   />
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {/* Overall score */}
-        {completedCategories.length > 0 && (
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <div className="text-sm font-medium text-blue-900">
-              Overall Score: {average.toFixed(2)}/5
-            </div>
-            <div className="text-xs text-blue-700">
-              Based on {count} categories
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Song, Note, SortMode } from './types';
+import { Song, CategoryNote, SortMode } from './types';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { EmptyState } from './components/EmptyState';
@@ -12,7 +12,8 @@ import {
   parseSunoInput, 
   calcSongScore, 
   uuid, 
-  runInlineTests 
+  runInlineTests,
+  migrateOldNotes
 } from './utils';
 
 function App() {
@@ -34,11 +35,16 @@ function App() {
     runInlineTests();
   }, []);
 
-  // Load songs from localStorage
+  // Load songs from localStorage with migration
   useEffect(() => { 
     try { 
       const saved = localStorage.getItem(LS_KEY); 
-      if (saved) setSongs(JSON.parse(saved)); 
+      if (saved) {
+        const parsedSongs = JSON.parse(saved);
+        // Migrate old songs to new format
+        const migratedSongs = parsedSongs.map((song: any) => migrateOldNotes(song));
+        setSongs(migratedSongs);
+      }
     } catch {} 
   }, []);
 
@@ -103,25 +109,25 @@ function App() {
       id: parsed.id, 
       embedSrc: parsed.embedSrc, 
       originalInput: input.paste.trim(), 
-      notes: [] 
+      categoryNotes: [] 
     };
     
     setSongs(prev => [newSong, ...prev]); 
     setShowAdd(false);
   }
 
-  function handleAddNote(songId: string, note: Omit<Note, 'id' | 'createdAt'>) { 
+  function handleAddCategoryNote(songId: string, note: Omit<CategoryNote, 'id' | 'createdAt'>) { 
     setSongs(prev => prev.map(s => 
       s.id === songId 
-        ? { ...s, notes: [...(s.notes || []), { id: uuid(), createdAt: Date.now(), ...note }] } 
+        ? { ...s, categoryNotes: [...(s.categoryNotes || []), { id: uuid(), createdAt: Date.now(), ...note }] } 
         : s
     )); 
   }
 
-  function handleDeleteNote(songId: string, noteId: string) { 
+  function handleDeleteCategoryNote(songId: string, noteId: string) { 
     setSongs(prev => prev.map(s => 
       s.id === songId 
-        ? { ...s, notes: (s.notes || []).filter(n => n.id !== noteId) } 
+        ? { ...s, categoryNotes: (s.categoryNotes || []).filter(n => n.id !== noteId) } 
         : s
     )); 
   }
@@ -170,8 +176,8 @@ function App() {
                 <SongCard 
                   key={s.id} 
                   song={s} 
-                  onAddNote={handleAddNote} 
-                  onDeleteNote={handleDeleteNote} 
+                  onAddCategoryNote={handleAddCategoryNote} 
+                  onDeleteCategoryNote={handleDeleteCategoryNote} 
                   onRemoveSong={handleRemoveSong} 
                 />
               ))}

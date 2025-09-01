@@ -1,12 +1,14 @@
 # Suno Note Taker
 
-A React TypeScript application for comparing and rating Suno AI-generated songs. Built with modern React patterns and proper separation of concerns.
+A React TypeScript application for comparing and rating Suno AI-generated songs using a structured category-based scoring system. Built with modern React patterns and proper separation of concerns.
 
 ## Features
 
 - **Song Management**: Add Suno songs via iframe embeds, URLs, or raw IDs
-- **Note Taking**: Rate songs with scores from -2 to +2 and add descriptive notes
-- **Scoring System**: Automatic calculation of total scores and averages
+- **Structured Note Taking**: Rate songs across specific categories (Intro, Verse, Bridge, Chorus, Outro, Vocals, Timing, Overall Vibe)
+- **Category-Based Scoring**: Each category is rated on a 0-5 scale for consistent evaluation
+- **Multiple Verses/Bridges**: Support for rating multiple verses and bridges with automatic numbering
+- **Automatic Scoring**: Overall score calculated as average of all completed categories
 - **Manual Sorting**: Sort songs by total score or average score with a manual sort button
 - **Local Storage**: All data is saved locally in your browser
 - **Getting Started Guide**: Step-by-step instructions for adding your first song
@@ -23,15 +25,15 @@ A React TypeScript application for comparing and rating Suno AI-generated songs.
 ```
 src/
 ├── components/          # Reusable UI components
-│   ├── AddSongModal.tsx    # Modal for adding new songs
-│   ├── EmptyState.tsx      # Empty state when no songs exist
-│   ├── Footer.tsx          # App footer
-│   ├── Header.tsx          # App header with navigation
-│   ├── PMCount.tsx         # Plus/minus count display
-│   ├── ScorePill.tsx       # Score display component
-│   ├── SectionHeader.tsx   # Section headers with controls
-│   ├── SongCard.tsx        # Individual song display
-│   └── index.ts            # Component exports
+│   ├── AddSongModal.tsx       # Modal for adding new songs
+│   ├── CategoryRatingModal.tsx # Modal for rating specific categories
+│   ├── EmptyState.tsx         # Empty state when no songs exist
+│   ├── Footer.tsx             # App footer
+│   ├── Header.tsx             # App header with navigation
+│   ├── ScorePill.tsx          # Score display component
+│   ├── SectionHeader.tsx      # Section headers with controls
+│   ├── SongCard.tsx           # Individual song display with category buttons
+│   └── index.ts               # Component exports
 ├── types/              # TypeScript type definitions
 │   └── index.ts           # App interfaces and types
 ├── utils/              # Utility functions
@@ -83,15 +85,38 @@ npm run build
 
 ### Taking Notes
 
-1. For each song, use the score selector (-2 to +2)
-2. Write a descriptive note about your impression
-3. Click "Add note" or press Enter
+The new system uses a structured approach with specific categories:
+
+1. **Category Buttons**: Each song card displays buttons for different categories:
+   - Intro, Verse, Bridge, Chorus, Outro
+   - Vocals, Timing, Overall Vibe
+
+2. **Rating Process**:
+   - Click any category button to open a rating modal
+   - Use the slider to select a score from 0-5
+   - Click "Add Rating" to save
+
+3. **Multiple Verses/Bridges**:
+   - Verse and Bridge buttons remain active after rating
+   - Click again to rate the next verse/bridge (Verse 2, Bridge 2, etc.)
+
+4. **Category Completion**:
+   - Once rated, category buttons show green with the score
+   - Other categories remain available until rated
+   - Delete ratings using the × button in the category scores section
+
+### Scoring System
+
+- **Individual Categories**: Rated 0-5 (0 = poor, 5 = excellent)
+- **Overall Score**: Average of all completed categories
+- **Total Score**: Sum of all category scores
+- **Consistent Evaluation**: Same categories across all songs for fair comparison
 
 ### Managing Songs
 
 - **Remove songs**: Click the "Remove" button on any song card
-- **Delete notes**: Click "Delete" on individual notes
-- **Sort songs**: Click the "Sort" button to order by total or average score (songs stay in place while adding notes)
+- **Delete ratings**: Click "×" on individual category scores
+- **Sort songs**: Click the "Sort" button to order by total or average score
 
 ### Getting Started
 
@@ -128,6 +153,13 @@ The app includes inline tests for core utility functions. Run the app and check 
 2. Add utility functions in `src/utils/index.ts`
 3. Create components in `src/components/`
 4. Update the main App component as needed
+
+## Migration from Old System
+
+The app automatically migrates data from the previous free-form note system:
+- Old notes are converted to "Overall Vibe" category ratings
+- Scores are converted from -2 to +2 scale to 0-5 scale
+- All existing data is preserved during migration
 
 ## License
 

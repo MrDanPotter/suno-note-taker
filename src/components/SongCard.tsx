@@ -1,54 +1,67 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { Song, Note } from '../types';
+import { Song, CategoryNote, NoteCategory } from '../types';
 import { ScorePill } from './ScorePill';
-import { PMCount } from './PMCount';
-import { calcSongScore, clampScore } from '../utils';
+import { CategoryRatingModal } from './CategoryRatingModal';
+import { calcSongScore, NOTE_CATEGORIES, CATEGORY_LABELS, getNextVerseNumber, getNextBridgeNumber } from '../utils';
 
 interface SongCardProps {
   song: Song;
-  onAddNote: (songId: string, note: Omit<Note, 'id' | 'createdAt'>) => void;
-  onDeleteNote: (songId: string, noteId: string) => void;
+  onAddCategoryNote: (songId: string, note: Omit<CategoryNote, 'id' | 'createdAt'>) => void;
+  onDeleteCategoryNote: (songId: string, noteId: string) => void;
   onRemoveSong: (songId: string) => void;
 }
 
 export const SongCard: React.FC<SongCardProps> = ({ 
   song, 
-  onAddNote, 
-  onDeleteNote, 
+  onAddCategoryNote, 
+  onDeleteCategoryNote, 
   onRemoveSong 
 }) => {
-  const { total, plus, minus, count, average } = useMemo(() => calcSongScore(song), [song]);
-  const [text, setText] = useState("");
-  const [score, setScore] = useState<0 | 1 | -1 | 2 | -2>(0);
+  const { total, average, count, categoryScores, completedCategories } = useMemo(() => calcSongScore(song), [song]);
+  const [ratingModal, setRatingModal] = useState<{
+    isOpen: boolean;
+    category: NoteCategory;
+    verseNumber?: number;
+    bridgeNumber?: number;
+  }>({
+    isOpen: false,
+    category: 'intro'
+  });
 
   // Memoize handlers to prevent unnecessary re-renders
-  const handleAddNote = useCallback(() => {
-    if (!text.trim()) return;
-    onAddNote(song.id, { text: text.trim(), score });
-    setText("");
-  }, [text, score, song.id, onAddNote]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && text.trim()) {
-      handleAddNote();
-    }
-  }, [text, handleAddNote]);
-
-  const handleScoreChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setScore(clampScore(parseInt(e.target.value)));
-  }, []);
-
-  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setText(e.target.value);
-  }, []);
+  const handleAddCategoryNote = useCallback((note: Omit<CategoryNote, 'id' | 'createdAt'>) => {
+    onAddCategoryNote(song.id, note);
+  }, [song.id, onAddCategoryNote]);
 
   const handleRemoveSong = useCallback(() => {
     onRemoveSong(song.id);
   }, [song.id, onRemoveSong]);
 
-  const handleDeleteNote = useCallback((noteId: string) => {
-    onDeleteNote(song.id, noteId);
-  }, [song.id, onDeleteNote]);
+  const handleDeleteCategoryNote = useCallback((noteId: string) => {
+    onDeleteCategoryNote(song.id, noteId);
+  }, [song.id, onDeleteCategoryNote]);
+
+  const handleCategoryClick = useCallback((category: NoteCategory) => {
+    let verseNumber: number | undefined;
+    let bridgeNumber: number | undefined;
+
+    if (category === 'verse') {
+      verseNumber = getNextVerseNumber(song);
+    } else if (category === 'bridge') {
+      bridgeNumber = getNextBridgeNumber(song);
+    }
+
+    setRatingModal({
+      isOpen: true,
+      category,
+      verseNumber,
+      bridgeNumber
+    });
+  }, [song]);
+
+  const closeRatingModal = useCallback(() => {
+    setRatingModal(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   // Memoize the iframe to prevent re-rendering
   const songIframe = useMemo(() => (
@@ -60,6 +73,42 @@ export const SongCard: React.FC<SongCardProps> = ({
     />
   ), [song.id, song.embedSrc]);
 
+  // Get notes grouped by category for display
+  const notesByCategory = useMemo(() => {
+    const grouped = new Map<NoteCategory, CategoryNote[]>();
+    NOTE_CATEGORIES.forEach(category => {
+      grouped.set(category, []);
+    });
+
+    song.categoryNotes.forEach(note => {
+      const existing = grouped.get(note.category) || [];
+      grouped.set(note.category, [...existing, note]);
+    });
+
+    return grouped;
+  }, [song.categoryNotes]);
+
+  const isCategoryCompleted = (category: NoteCategory): boolean => {
+    return completedCategories.includes(category);
+  };
+
+  const getCategoryButtonLabel = (category: NoteCategory): string => {
+    const baseLabel = CATEGORY_LABELS[category];
+    const notes = notesByCategory.get(category) || [];
+    
+    if (category === 'verse' || category === 'bridge') {
+      const numbers = notes.map(note => 
+        category === 'verse' ? note.verseNumber || 1 : note.bridgeNumber || 1
+      );
+      const uniqueNumbers = Array.from(new Set(numbers)).sort((a, b) => a - b);
+      if (uniqueNumbers.length > 0) {
+        return `${baseLabel} ${uniqueNumbers.join(', ')}`;
+      }
+    }
+    
+    return baseLabel;
+  };
+
   return (
     <div className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
@@ -67,7 +116,9 @@ export const SongCard: React.FC<SongCardProps> = ({
           <div className="text-sm text-gray-500 break-all">{song.id}</div>
           <div className="flex items-center gap-2">
             <ScorePill total={total} average={average} />
-            <PMCount plus={plus} minus={minus} count={count} />
+            <div className="text-xs text-gray-500">
+              {count} categories rated
+            </div>
           </div>
         </div>
         <button 
@@ -84,70 +135,98 @@ export const SongCard: React.FC<SongCardProps> = ({
         {songIframe}
       </div>
 
-      {/* Notes list */}
+      {/* Category buttons */}
       <div className="px-4 py-3">
-        {song.notes.length === 0 ? (
-          <div className="text-sm text-gray-500 mb-3">
-            No notes yet. Add your first impression below.
-          </div>
-        ) : (
-          <ul className="space-y-2 mb-4">
-            {song.notes.map(n => (
-              <li key={n.id} className="flex items-start gap-3">
-                <span className={`mt-0.5 inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
-                  n.score > 0 
-                    ? "bg-green-100 text-green-800" 
-                    : n.score < 0 
-                    ? "bg-red-100 text-red-800" 
-                    : "bg-gray-100 text-gray-800"
-                }`}>
-                  {n.score > 0 ? `+${n.score}` : n.score}
-                </span>
-                <div className="flex-1">
-                  <div className="text-sm leading-snug">{n.text}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </div>
-                </div>
-                <button 
-                  onClick={() => handleDeleteNote(n.id)} 
-                  className="text-[11px] px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Rate Categories</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {NOTE_CATEGORIES.map(category => {
+              const isCompleted = isCategoryCompleted(category);
+              const notes = notesByCategory.get(category) || [];
+              const latestNote = notes.sort((a, b) => b.createdAt - a.createdAt)[0];
+              
+              return (
+                <button
+                  key={category}
+                  onClick={() => handleCategoryClick(category)}
+                  disabled={isCompleted && category !== 'verse' && category !== 'bridge'}
+                  className={`
+                    text-xs px-3 py-2 rounded-lg border transition-colors
+                    ${isCompleted 
+                      ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' 
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                    }
+                    ${(category === 'verse' || category === 'bridge') ? '' : 'disabled:opacity-50 disabled:cursor-not-allowed'}
+                  `}
+                  title={isCompleted ? `Rated: ${latestNote?.score}/5` : `Rate ${CATEGORY_LABELS[category]}`}
                 >
-                  Delete
+                  <div className="font-medium">{getCategoryButtonLabel(category)}</div>
+                  {isCompleted && (
+                    <div className="text-xs opacity-75">{latestNote?.score}/5</div>
+                  )}
                 </button>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Category scores display */}
+        {completedCategories.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Category Scores</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {completedCategories.map(category => {
+                const score = categoryScores[category];
+                const notes = notesByCategory.get(category) || [];
+                
+                return (
+                  <div key={category} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                    <span className="text-xs font-medium text-gray-700">
+                      {CATEGORY_LABELS[category]}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-900">{score.toFixed(1)}/5</span>
+                      <button
+                        onClick={() => {
+                          const latestNote = notes.sort((a, b) => b.createdAt - a.createdAt)[0];
+                          if (latestNote) {
+                            handleDeleteCategoryNote(latestNote.id);
+                          }
+                        }}
+                        className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                        title="Delete rating"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {/* Add note form */}
-        <div className="flex items-center gap-2">
-          <select 
-            className="border rounded-lg text-sm px-2 py-1" 
-            value={score} 
-            onChange={handleScoreChange}
-          >
-            <option value={2}>+2</option>
-            <option value={1}>+1</option>
-            <option value={0}>0</option>
-            <option value={-1}>-1</option>
-            <option value={-2}>-2</option>
-          </select>
-          <input 
-            className="flex-1 border rounded-lg text-sm px-3 py-2" 
-            placeholder={'Write a quick note (e.g., "hook slaps")'} 
-            value={text} 
-            onChange={handleTextChange} 
-            onKeyDown={handleKeyDown}
-          />
-          <button 
-            className="text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700" 
-            onClick={handleAddNote}
-          >
-            Add note
-          </button>
-        </div>
+        {/* Overall score */}
+        {completedCategories.length > 0 && (
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <div className="text-sm font-medium text-blue-900">
+              Overall Score: {average.toFixed(1)}/5
+            </div>
+            <div className="text-xs text-blue-700">
+              Based on {count} categories
+            </div>
+          </div>
+        )}
       </div>
+
+      <CategoryRatingModal
+        isOpen={ratingModal.isOpen}
+        onClose={closeRatingModal}
+        onAddNote={handleAddCategoryNote}
+        category={ratingModal.category}
+        verseNumber={ratingModal.verseNumber}
+        bridgeNumber={ratingModal.bridgeNumber}
+      />
     </div>
   );
 };

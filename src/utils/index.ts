@@ -1,6 +1,21 @@
-import { Song, SongScore, ParsedSunoInput } from '../types';
+import { Song, SongScore, ParsedSunoInput, NoteCategory, CategoryNote } from '../types';
 
-export const LS_KEY = "suno-comparator-v3";
+export const LS_KEY = "suno-comparator-v4"; // Updated version for new system
+
+export const NOTE_CATEGORIES: NoteCategory[] = [
+  'intro', 'verse', 'bridge', 'chorus', 'outro', 'vocals', 'timing', 'overall_vibe'
+];
+
+export const CATEGORY_LABELS: Record<NoteCategory, string> = {
+  intro: 'Intro',
+  verse: 'Verse',
+  bridge: 'Bridge', 
+  chorus: 'Chorus',
+  outro: 'Outro',
+  vocals: 'Vocals',
+  timing: 'Timing',
+  overall_vibe: 'Overall Vibe'
+};
 
 export function uuid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -9,12 +24,8 @@ export function uuid(): string {
   return "id-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-export function clampScore(n: number): -2 | -1 | 0 | 1 | 2 {
-  if (n <= -2) return -2;
-  if (n === -1) return -1;
-  if (n === 0) return 0;
-  if (n === 1) return 1;
-  return 2;
+export function clampScore(n: number): number {
+  return Math.max(0, Math.min(5, Math.round(n)));
 }
 
 // Accepts: full <iframe ...>, an embed URL, a song URL, or a raw 36-char id
@@ -38,14 +49,110 @@ export function parseSunoInput(input: string): ParsedSunoInput | null {
 }
 
 export function calcSongScore(song: Song): SongScore {
-  const notes = song.notes || [];
-  const total = notes.reduce((sum, n) => sum + (n.score || 0), 0);
-  const plus = notes.filter(n => n.score > 0).length;
-  const minus = notes.filter(n => n.score < 0).length;
-  const count = notes.length;
+  const categoryNotes = song.categoryNotes || [];
+  
+  // Initialize category scores to 0
+  const categoryScores: Record<NoteCategory, number> = {
+    intro: 0,
+    verse: 0,
+    bridge: 0,
+    chorus: 0,
+    outro: 0,
+    vocals: 0,
+    timing: 0,
+    overall_vibe: 0
+  };
+  
+  const completedCategories: NoteCategory[] = [];
+  
+  // Calculate scores for each category
+  NOTE_CATEGORIES.forEach(category => {
+    const notesForCategory = categoryNotes.filter(note => note.category === category);
+    
+    if (notesForCategory.length > 0) {
+      // For verse and bridge, we need to handle multiple instances
+      if (category === 'verse' || category === 'bridge') {
+        // Group by verse/bridge number and calculate average
+        const groupedNotes = new Map<number, CategoryNote[]>();
+        notesForCategory.forEach(note => {
+          const number = category === 'verse' ? note.verseNumber || 1 : note.bridgeNumber || 1;
+          if (!groupedNotes.has(number)) {
+            groupedNotes.set(number, []);
+          }
+          groupedNotes.get(number)!.push(note);
+        });
+        
+        // Calculate average score across all verses/bridges
+        let totalScore = 0;
+        let totalCount = 0;
+        groupedNotes.forEach(notes => {
+          const avgScore = notes.reduce((sum, note) => sum + note.score, 0) / notes.length;
+          totalScore += avgScore;
+          totalCount++;
+        });
+        
+        categoryScores[category] = totalCount > 0 ? totalScore / totalCount : 0;
+        completedCategories.push(category);
+      } else {
+        // For other categories, just take the latest score
+        const latestNote = notesForCategory.sort((a, b) => b.createdAt - a.createdAt)[0];
+        categoryScores[category] = latestNote.score;
+        completedCategories.push(category);
+      }
+    }
+  });
+  
+  // Calculate total and average from completed categories only
+  const completedScores = completedCategories.map(cat => categoryScores[cat]);
+  const total = completedScores.reduce((sum, score) => sum + score, 0);
+  const count = completedCategories.length;
   const average = count > 0 ? total / count : 0;
   
-  return { total, plus, minus, count, average };
+  return { 
+    total, 
+    average, 
+    count, 
+    categoryScores, 
+    completedCategories 
+  };
+}
+
+// Helper function to get next verse/bridge number
+export function getNextVerseNumber(song: Song): number {
+  const verseNotes = song.categoryNotes.filter(note => note.category === 'verse');
+  if (verseNotes.length === 0) return 1;
+  
+  const maxVerseNumber = Math.max(...verseNotes.map(note => note.verseNumber || 1));
+  return maxVerseNumber + 1;
+}
+
+export function getNextBridgeNumber(song: Song): number {
+  const bridgeNotes = song.categoryNotes.filter(note => note.category === 'bridge');
+  if (bridgeNotes.length === 0) return 1;
+  
+  const maxBridgeNumber = Math.max(...bridgeNotes.map(note => note.bridgeNumber || 1));
+  return maxBridgeNumber + 1;
+}
+
+// Migration function to convert old notes to new system
+export function migrateOldNotes(song: any): Song {
+  if (song.notes && Array.isArray(song.notes)) {
+    // Convert old notes to new system
+    const categoryNotes = song.notes.map((note: any) => ({
+      id: note.id,
+      category: 'overall_vibe' as NoteCategory, // Default to overall vibe
+      score: Math.max(0, note.score + 2), // Convert -2 to +2 scale to 0-5 scale
+      createdAt: note.createdAt
+    }));
+    
+    return {
+      ...song,
+      categoryNotes,
+      notes: undefined // Remove old notes
+    };
+  }
+  
+  return song;
 }
 
 // Inline tests for parseSunoInput and calcSongScore
@@ -73,13 +180,22 @@ export function runInlineTests(): void {
     console.warn('Parse tests threw (non-fatal):', e);
   }
 
-  // score tests
-  const s1: Song = { id: 'test1', embedSrc: '', originalInput: '', notes: [{ id: '1', text: '', score: 2, createdAt: 0 }, { id: '2', text: '', score: 1, createdAt: 0 }, { id: '3', text: '', score: -1, createdAt: 0 }] };
-  const s2: Song = { id: 'test2', embedSrc: '', originalInput: '', notes: [] };
+  // score tests for new system
+  const s1: Song = { 
+    id: 'test1', 
+    embedSrc: '', 
+    originalInput: '', 
+    categoryNotes: [
+      { id: '1', category: 'intro', score: 4, createdAt: 0 },
+      { id: '2', category: 'chorus', score: 5, createdAt: 0 },
+      { id: '3', category: 'vocals', score: 3, createdAt: 0 }
+    ] 
+  };
+  const s2: Song = { id: 'test2', embedSrc: '', originalInput: '', categoryNotes: [] };
   
-  const r1 = calcSongScore(s1); // total 2, avg 0.666...
+  const r1 = calcSongScore(s1); // total 12, avg 4
   const r2 = calcSongScore(s2); // total 0, avg 0
   
-  console.assert(r1.total === 2 && Math.abs(r1.average - (2/3)) < 1e-9, 'calcSongScore totals/avg failed');
+  console.assert(r1.total === 12 && r1.average === 4, 'calcSongScore totals/avg failed');
   console.assert(r2.total === 0 && r2.average === 0, 'calcSongScore empty failed');
 }

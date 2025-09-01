@@ -65,6 +65,7 @@ export function calcSongScore(song: Song): SongScore {
   
   const completedCategories: NoteCategory[] = [];
   let totalCategoryCount = 0; // Count each individual category instance
+  let totalIndividualScore = 0; // Sum of all individual scores
   
   // Calculate scores for each category
   NOTE_CATEGORIES.forEach(category => {
@@ -80,19 +81,20 @@ export function calcSongScore(song: Song): SongScore {
         categoryScores[category] = totalCount > 0 ? totalScore / totalCount : 0;
         completedCategories.push(category);
         totalCategoryCount += totalCount; // Count each individual verse/bridge
+        totalIndividualScore += totalScore; // Add sum of individual scores
       } else {
         // For other categories, just take the latest score
         const latestNote = notesForCategory.sort((a, b) => b.createdAt - a.createdAt)[0];
         categoryScores[category] = latestNote.score;
         completedCategories.push(category);
         totalCategoryCount += 1; // Count as one category
+        totalIndividualScore += latestNote.score; // Add individual score
       }
     }
   });
   
-  // Calculate total and average from completed categories only
-  const completedScores = completedCategories.map(cat => categoryScores[cat]);
-  const total = completedScores.reduce((sum, score) => sum + score, 0);
+  // Calculate total and average from individual scores, not category averages
+  const total = totalIndividualScore; // Use sum of all individual scores
   const count = totalCategoryCount; // Use the total count of individual instances
   const average = count > 0 ? total / count : 0;
   
@@ -225,6 +227,7 @@ export function runInlineTests(): void {
   const r5 = calcSongScore(s5);
   console.assert(r5.count === 3, 'Multiple verses count failed - expected 3, got ' + r5.count);
   console.assert(r5.average === 4.0, 'Multiple verses average failed - expected 4.0, got ' + r5.average);
+  console.assert(r5.total === 12.0, 'Multiple verses total failed - expected 12.0, got ' + r5.total);
 
   // Test mixed categories counting
   const s6: Song = {
@@ -241,4 +244,20 @@ export function runInlineTests(): void {
   const r6 = calcSongScore(s6);
   console.assert(r6.count === 4, 'Mixed categories count failed - expected 4, got ' + r6.count);
   console.assert(Math.abs(r6.average - 4.125) < 0.001, 'Mixed categories average failed - expected 4.125, got ' + r6.average);
+  console.assert(r6.total === 16.5, 'Mixed categories total failed - expected 16.5, got ' + r6.total);
+
+  // Test bridge scoring specifically
+  const s7: Song = {
+    id: 'test7',
+    embedSrc: '',
+    originalInput: '',
+    categoryNotes: [
+      { id: '1', category: 'bridge', score: 5.0, bridgeNumber: 1, createdAt: 0 },
+      { id: '2', category: 'bridge', score: 5.0, bridgeNumber: 2, createdAt: 0 }
+    ]
+  };
+  const r7 = calcSongScore(s7);
+  console.assert(r7.count === 2, 'Bridge count failed - expected 2, got ' + r7.count);
+  console.assert(r7.average === 5.0, 'Bridge average failed - expected 5.0, got ' + r7.average);
+  console.assert(r7.total === 10.0, 'Bridge total failed - expected 10.0, got ' + r7.total);
 }

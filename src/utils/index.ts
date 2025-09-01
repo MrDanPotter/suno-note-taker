@@ -64,6 +64,7 @@ export function calcSongScore(song: Song): SongScore {
   };
   
   const completedCategories: NoteCategory[] = [];
+  let totalCategoryCount = 0; // Count each individual category instance
   
   // Calculate scores for each category
   NOTE_CATEGORIES.forEach(category => {
@@ -78,11 +79,13 @@ export function calcSongScore(song: Song): SongScore {
         
         categoryScores[category] = totalCount > 0 ? totalScore / totalCount : 0;
         completedCategories.push(category);
+        totalCategoryCount += totalCount; // Count each individual verse/bridge
       } else {
         // For other categories, just take the latest score
         const latestNote = notesForCategory.sort((a, b) => b.createdAt - a.createdAt)[0];
         categoryScores[category] = latestNote.score;
         completedCategories.push(category);
+        totalCategoryCount += 1; // Count as one category
       }
     }
   });
@@ -90,7 +93,7 @@ export function calcSongScore(song: Song): SongScore {
   // Calculate total and average from completed categories only
   const completedScores = completedCategories.map(cat => categoryScores[cat]);
   const total = completedScores.reduce((sum, score) => sum + score, 0);
-  const count = completedCategories.length;
+  const count = totalCategoryCount; // Use the total count of individual instances
   const average = count > 0 ? total / count : 0;
   
   return { 
@@ -207,4 +210,35 @@ export function runInlineTests(): void {
   };
   const r4 = calcSongScore(s4);
   console.assert(r4.average === 3.0, 'Single verse scoring failed - expected 3.0, got ' + r4.average);
+
+  // Test multiple verses counting
+  const s5: Song = {
+    id: 'test5',
+    embedSrc: '',
+    originalInput: '',
+    categoryNotes: [
+      { id: '1', category: 'verse', score: 3.0, verseNumber: 1, createdAt: 0 },
+      { id: '2', category: 'verse', score: 4.0, verseNumber: 2, createdAt: 0 },
+      { id: '3', category: 'verse', score: 5.0, verseNumber: 3, createdAt: 0 }
+    ]
+  };
+  const r5 = calcSongScore(s5);
+  console.assert(r5.count === 3, 'Multiple verses count failed - expected 3, got ' + r5.count);
+  console.assert(r5.average === 4.0, 'Multiple verses average failed - expected 4.0, got ' + r5.average);
+
+  // Test mixed categories counting
+  const s6: Song = {
+    id: 'test6',
+    embedSrc: '',
+    originalInput: '',
+    categoryNotes: [
+      { id: '1', category: 'intro', score: 4.0, createdAt: 0 },
+      { id: '2', category: 'verse', score: 3.0, verseNumber: 1, createdAt: 0 },
+      { id: '3', category: 'verse', score: 5.0, verseNumber: 2, createdAt: 0 },
+      { id: '4', category: 'chorus', score: 4.5, createdAt: 0 }
+    ]
+  };
+  const r6 = calcSongScore(s6);
+  console.assert(r6.count === 4, 'Mixed categories count failed - expected 4, got ' + r6.count);
+  console.assert(Math.abs(r6.average - 4.125) < 0.001, 'Mixed categories average failed - expected 4.125, got ' + r6.average);
 }

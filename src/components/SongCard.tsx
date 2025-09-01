@@ -200,7 +200,7 @@ export const SongCard: React.FC<SongCardProps> = ({
                         key={`${category}-${number}`}
                         category={category}
                         currentScore={note.score}
-                        onScoreChange={(newScore: number) => handleScoreChange(category, newScore, number, undefined)}
+                        onScoreChange={(newScore: number) => handleScoreChange(category, newScore, category === 'verse' ? number : undefined, category === 'bridge' ? number : undefined)}
                         onDelete={() => handleDeleteCategoryNote(note.id)}
                         verseNumber={category === 'verse' ? number : undefined}
                         bridgeNumber={category === 'bridge' ? number : undefined}
